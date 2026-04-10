@@ -306,4 +306,5 @@ if __name__ == "__main__":
     print(f"Nearest Neighbor look-ahead: {total_dist2:.2f}")
     print(f"Sau 2-opt: {improved_dist:.2f}")
     improvement = ((total_dist1 - improved_dist) / total_dist1) * 100
-    print(f"Cải thiện: {improvement:.2f}%")
+    print(f"Cải thiện: {improvement:.2f}%")#   U p d a t e   o n   0 4 / 1 0 / 2 0 2 6   2 2 : 1 5 : 4 9  
+ 
