@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo đơn hàng mới - Hệ Thống Giao Hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #1e293b;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --bg-body: #f8fafc;
+            --text-main: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-logo {
+            padding: 25px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+        }
+        .sidebar-menu { list-style: none; margin-top: 10px; flex-grow: 1; }
+        .sidebar-menu li {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .sidebar-menu li i { margin-right: 12px; font-size: 1.1rem; width: 20px; text-align: center; }
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background-color: #334155;
+            color: white;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .content { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .top-nav {
+            background: white;
+            padding: 12px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .user-nav { display: flex; align-items: center; gap: 20px; }
+        .btn-logout-form { margin: 0; padding: 0; }
+        .btn-logout-submit { 
+            background: none;
+            border: none;
+            color: var(--danger-color); 
+            font-size: 13px; 
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container { padding: 30px 40px; max-width: 800px; margin: 0 auto; width: 100%; }
+
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .form-subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .form-group label .required {
+            color: var(--danger-color);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .help-text {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .btn-submit {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-cancel:hover {
+            background: #475569;
+        }
+
+        .info-note {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .info-note i {
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-truck-fast"></i> UTH Delivery
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="location.href='{% url 'index' %}'">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </li>
+            <li class="active" onclick="location.href='{% url 'tao_don_moi' %}'">
+                <i class="fas fa-plus-circle"></i> Tạo đơn hàng
+            </li>
+            <li onclick="location.href='{% url 'danh_sach_don_hang' %}'">
+                <i class="fas fa-file-alt"></i> Thông tin đơn hàng
+            </li>
+            <li onclick="location.href='{% url 'cai_dat' %}'">
+                <i class="fas fa-cog"></i> Cài đặt hệ thống
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="top-nav">
+            <div></div>
+            <div class="user-nav">
+                {% if user.is_authenticated %}
+                <div style="text-align: right;">
+                    <div style="font-size: 13px; font-weight: 600;">{{ user.username }}</div>
+                    <div style="font-size: 11px; color: var(--success-color);"><i class="fas fa-circle" style="font-size: 8px;"></i> Admin</div>
+                </div>
+                <form action="{% url 'logout' %}" method="post" class="btn-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout-submit">
+                        <i class="fas fa-sign-out-alt"></i> Thoát
+                    </button>
+                </form>
+                {% endif %}
+                <i class="fas fa-user-circle fa-2xl" style="color: var(--primary-color);"></i>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="form-card">
+                <h1 class="form-title">
+                    <i class="fas fa-plus-circle" style="color: var(--accent-color);"></i> Tạo đơn hàng mới
+                </h1>
+                <p class="form-subtitle">Nhập thông tin khách hàng và địa chỉ giao hàng</p>
+
+                <div class="info-note">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Lưu ý:</strong> Mã đơn hàng sẽ được tự động tạo theo định dạng <strong>DHxxx</strong>. 
+                    Bạn không cần nhập thủ công. Sau khi tạo, đơn hàng sẽ có trạng thái <strong>"Chưa giao"</strong>.
+                </div>
+
+                <form method="post" action="{% url 'tao_don_moi' %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tên khách hàng <span class="required">*</span></label>
+                            <input type="text" name="ten_khach" placeholder="VD: Nguyễn Văn A" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="tel" name="so_dien_thoai" placeholder="VD: 0901234567">
+                            <div class="help-text">Không bắt buộc, nhưng nên có để liên lạc</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Địa chỉ giao hàng</label>
+                        <textarea name="dia_chi" rows="3" placeholder="Số nhà, đường, phường/xã, quận/huyện, thành phố"></textarea>
+                        <div class="help-text">Địa chỉ càng chi tiết càng dễ tìm</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Vĩ độ (Latitude) <span class="required">*</span></label>
+                            <input type="number" step="any" name="lat" placeholder="VD: 10.802" required>
+                            <div class="help-text">Tọa độ vĩ độ (từ -90 đến 90)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Kinh độ (Longitude) <span class="required">*</span></label>
+                            <input type="number" step="any" name="lng" placeholder="VD: 106.713" required>
+                            <div class="help-text">Tọa độ kinh độ (từ -180 đến 180)</div>
+                        </div>
+                    </div>
+
+                    <!-- ========== ĐÃ XÓA 3 TRƯỜNG: khung_gio_som, khung_gio_muon, thoi_gian_phuc_vu ========== -->
+
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save"></i> Tạo đơn hàng
+                    </button>
+                    
+                    <a href="{% url 'danh_sach_don_hang' %}" class="btn-cancel">
+                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                    </a>
+                </form>
+            </div>
+
+            <!-- Hướng dẫn lấy tọa độ nhanh -->
+            <div style="margin-top: 20px; background: #eef2ff; border-radius: 12px; padding: 15px;">
+                <h4 style="margin-bottom: 10px; font-size: 14px;">
+                    <i class="fas fa-map-marker-alt" style="color: var(--accent-color);"></i> Cách lấy tọa độ nhanh:
+                </h4>
+                <ul style="margin-left: 20px; font-size: 13px; color: #475569;">
+                    <li>Mở <strong>Google Maps</strong> trên trình duyệt</li>
+                    <li>Click chuột phải vào vị trí cần giao hàng</li>
+                    <li>Chọn <strong>"Tọa độ ở đây là gì?"</strong> hoặc <strong>"What's here?"</strong></li>
+                    <li>Sao chép số thứ nhất (vĩ độ) và số thứ hai (kinh độ)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
