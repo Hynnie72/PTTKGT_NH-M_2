@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Hệ Thống Tối Ưu Giao Hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #1e293b;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --purple-color: #8b5cf6;
+            --bg-body: #f1f5f9;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-logo {
+            padding: 24px 25px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-bottom: 1px solid #334155;
+        }
+        .sidebar-logo i { margin-right: 10px; color: var(--accent-color); }
+        .sidebar-menu { list-style: none; margin-top: 20px; flex-grow: 1; }
+        .sidebar-menu li {
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .sidebar-menu li i { margin-right: 12px; font-size: 1.1rem; width: 22px; text-align: center; }
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background-color: #334155;
+            color: white;
+            border-left: 3px solid var(--accent-color);
+        }
+        .sidebar-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #334155;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .content { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .top-nav {
+            background: white;
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .page-title h1 { font-size: 1.3rem; font-weight: 600; color: var(--primary-color); }
+        .page-title p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .user-nav { display: flex; align-items: center; gap: 20px; }
+        .btn-logout-submit { 
+            background: none; border: none; color: var(--danger-color); 
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .container { padding: 24px 30px; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .map-container {
+            margin-bottom: 24px;
+        }
+        #map { 
+            height: 400px; 
+            width: 100%; 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            z-index: 1; 
+        }
+
+        .optimize-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .cost-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+        .cost-card.original { border-top: 4px solid var(--warning-color); }
+        .cost-card.optimized { border-top: 4px solid var(--accent-color); }
+        .cost-card.saved { border-top: 4px solid var(--success-color); }
+        
+        .cost-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .cost-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .cost-card.original .cost-value { color: var(--warning-color); }
+        .cost-card.optimized .cost-value { color: var(--accent-color); }
+        .cost-card.saved .cost-value { color: var(--success-color); }
+        .cost-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .btn-optimize {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+            margin-bottom: 20px;
+        }
+        .btn-optimize:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59,130,246,0.3);
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .stats-mini {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 16px;
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        .stat-number.total { color: var(--primary-color); }
+        .stat-number.pending { color: var(--warning-color); }
+        .stat-number.delivering { color: var(--info-color); }
+        .stat-number.delivered { color: var(--success-color); }
+        
+        .revenue-box {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            color: white;
+        }
+        .revenue-box .label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        .revenue-box .value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        /* Thông tin vận hành - đã xóa mục thuật toán */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 14px;
+        }
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+            font-size: 18px;
+        }
+        .info-content .label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .info-content .value {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .edit-link {
+            margin-top: 16px;
+            text-align: right;
+        }
+        .edit-link a {
+            color: var(--accent-color);
+            font-size: 13px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .orders-table {
+            width: 100%;
+        }
+        .order-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .order-row:last-child { border-bottom: none; }
+        .order-code {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .order-location {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .more-orders {
+            margin-top: 12px;
+            padding-top: 12px;
+            text-align: center;
+            border-top: 1px solid #f1f5f9;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .route-container {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .route-header h3 {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+        }
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+        .route-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .route-content.collapsed {
+            max-height: 0 !important;
+            padding: 0;
+            margin: 0;
+        }
+        .route-timeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+        .route-point {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 6px 14px;
+            border-radius: 24px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .route-point.depot {
+            background: #dc2626;
+            color: white;
+        }
+        .route-arrow {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        .route-summary {
+            margin-top: 14px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .route-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .route-stats div {
+            font-size: 12px;
+        }
+        .route-stats span:first-child {
+            color: #64748b;
+        }
+        .route-saved {
+            font-size: 12px;
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        @media (max-width: 900px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .optimize-grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 16px;
+            }
+            .route-timeline {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .route-timeline::-webkit-scrollbar {
+                height: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-truck-fast"></i> UTH Delivery
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active"><i class="fas fa-chart-line"></i> Dashboard</li>
+            <li onclick="location.href='{% url 'tao_don_moi' %}'"><i class="fas fa-plus-circle"></i> Tạo đơn hàng</li>
+            <li onclick="location.href='{% url 'danh_sach_don_hang' %}'"><i class="fas fa-file-alt"></i> Thông tin đơn hàng</li>
+            <li onclick="location.href='{% url 'cai_dat' %}'"><i class="fas fa-cog"></i> Cài đặt hệ thống</li>
+        </ul>
+        <div class="sidebar-footer">
+            <i class="fas fa-store"></i> Bưu điện UTH<br>
+            <span style="font-size: 10px;">Hệ thống tối ưu giao hàng v2.0</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="top-nav">
+            <div class="page-title">
+                <h1>Tổng quan giao hàng</h1>
+                <p><i class="fas fa-calendar-alt"></i> {{ now|date:"d/m/Y" }} | Cập nhật trực tiếp</p>
+            </div>
+            <div class="user-nav">
+                <div style="text-align: right;">
+                    <div style="font-size: 13px; font-weight: 600;">{{ user.username }}</div>
+                    <div style="font-size: 11px; color: var(--success-color);"><i class="fas fa-circle" style="font-size: 8px;"></i> Admin</div>
+                </div>
+                <form action="{% url 'logout' %}" method="post" style="margin:0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout-submit">
+                        <i class="fas fa-sign-out-alt"></i> Thoát
+                    </button>
+                </form>
+                <i class="fas fa-user-circle fa-2x" style="color: var(--primary-color);"></i>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- BẢN ĐỒ -->
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <!-- Nút chạy tối ưu -->
+            <form method="get" style="margin-bottom: 20px;">
+                <button type="submit" name="optimize" value="1" class="btn-optimize">
+                    <i class="fas fa-bolt"></i> CHẠY TỐI ƯU LỘ TRÌNH CHI TIẾT
+                </button>
+            </form>
+
+            {% if error %}
+            <div style="background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 13px;">
+                <i class="fas fa-exclamation-triangle"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- 3 thẻ chi phí tối ưu -->
+            <div class="optimize-grid">
+                <div class="cost-card original">
+                    <div class="cost-label"><i class="fas fa-chart-line"></i> Chi phí chưa tối ưu</div>
+                    <div class="cost-value">{{ total_cost|default:"0"|floatformat:0 }}đ</div>
+                    <div class="cost-sub">~ {{ total_dist|default:"0"|floatformat:1 }}km × {{ gia_cuoc|default:"5000" }}đ</div>
+                </div>
+                <div class="cost-card optimized">
+                    <div class="cost-label"><i class="fas fa-check-circle"></i> Chi phí đã tối ưu</div>
+                    <div class="cost-value">{{ optimized_cost|default:"0"|floatformat:0 }}đ</div>
+                    <div class="cost-sub">~ {{ total_dist|default:"0"|floatformat:1 }}km × {{ gia_cuoc|default:"5000" }}đ</div>
+                </div>
+                <div class="cost-card saved">
+                    <div class="cost-label"><i class="fas fa-piggy-bank"></i> Tiết kiệm được</div>
+                    <div class="cost-value">{{ saved_cost|default:"0"|floatformat:0 }}đ</div>
+                    <div class="cost-sub">~ {{ saved_percent|default:"23" }}% mỗi chuyến</div>
+                </div>
+            </div>
+
+            <!-- LỘ TRÌNH ĐỀ XUẤT -->
+            {% if route_result %}
+            <div class="route-container" id="routeContainer">
+                <div class="route-header" onclick="toggleRoute()">
+                    <h3>
+                        <i class="fas fa-map-marked-alt" style="color: var(--accent-color);"></i> 
+                        Lộ trình đề xuất
+                        <span style="font-size: 11px; background: #e2e8f0; padding: 2px 8px; border-radius: 20px; color: #475569;">{{ route_result|length }} điểm</span>
+                    </h3>
+                    <i class="fas fa-chevron-up toggle-icon" id="toggleIcon"></i>
+                </div>
+                <div class="route-content" id="routeContent">
+                    <div class="route-timeline">
+                        <span class="route-point depot"><i class="fas fa-warehouse"></i> Kho</span>
+                        {% for point in route_result %}
+                        <i class="fas fa-arrow-right route-arrow"></i>
+                        <span class="route-point">{{ point.ten_khach|truncatechars:18 }}</span>
+                        {% endfor %}
+                        <i class="fas fa-arrow-right route-arrow"></i>
+                        <span class="route-point depot"><i class="fas fa-warehouse"></i> Kho</span>
+                    </div>
+                    <div class="route-summary">
+                        <div class="route-stats">
+                            <div><span>📊 Tổng km:</span> <strong style="color: var(--accent-color);">{{ total_dist }} km</strong></div>
+                            <div><span>⏱️ Thời gian:</span> <strong>{{ total_time }} phút</strong></div>
+                            <div><span>⚡ Xử lý:</span> <strong>{{ runtime }}s</strong></div>
+                        </div>
+                        <div class="route-saved">
+                            <i class="fas fa-chart-line"></i> Tiết kiệm {{ saved_percent|default:"23" }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 2 cột -->
+            <div class="two-columns">
+                <!-- Cột trái: Thống kê đơn hàng -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-boxes"></i> Thống kê đơn hàng</h3>
+                        <i class="fas fa-ellipsis-h" style="color: var(--text-muted);"></i>
+                    </div>
+                    <div class="stats-mini">
+                        <div class="stat-item">
+                            <div class="stat-number total">{{ thong_ke.tong|default:0 }}</div>
+                            <div class="stat-label">Tổng đơn</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number pending">{{ thong_ke.chua_giao|default:0 }}</div>
+                            <div class="stat-label">Chưa giao <span style="color: var(--warning-color);">⚠️ Cần ưu tiên</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number delivering">{{ thong_ke.dang_giao|default:0 }}</div>
+                            <div class="stat-label">Đang giao</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number delivered">{{ thong_ke.da_giao|default:0 }}</div>
+                            <div class="stat-label">Đã giao</div>
+                        </div>
+                    </div>
+                    <div class="revenue-box">
+                        <div class="label"><i class="fas fa-chart-simple"></i> Doanh thu dự kiến</div>
+                        <div class="value">{{ revenue_estimate|default:"0"|floatformat:0 }}đ</div>
+                        <div class="label" style="margin-top: 5px;">~ {{ thong_ke.chua_giao|default:0 }} đơn chưa giao</div>
+                    </div>
+                </div>
+
+                <!-- ========== Cột phải: THÔNG TIN VẬN HÀNH (ĐÃ XÓA MỤC THUẬT TOÁN) ========== -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-truck"></i> Thông tin vận hành</h3>
+                        <i class="fas fa-ellipsis-h" style="color: var(--text-muted);"></i>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div class="info-content">
+                                <div class="label">Giá cước hiện tại</div>
+                                <div class="value">{{ gia_cuoc|default:"5000" }}đ/km</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-weight-hanging"></i></div>
+                            <div class="info-content">
+                                <div class="label">Tải trọng xe tối đa</div>
+                                <div class="value">{{ tai_trong|default:"500" }}kg</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-truck"></i></div>
+                            <div class="info-content">
+                                <div class="label">Số xe hiện có</div>
+                                <div class="value">{{ so_xe|default:"3" }} xe</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-clock"></i></div>
+                            <div class="info-content">
+                                <div class="label">Giờ làm việc</div>
+                                <div class="value">{{ gio_bat_dau|default:"8" }}h - {{ gio_ket_thuc|default:"17" }}h</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="info-content">
+                                <div class="label">Cao điểm</div>
+                                <div class="value">17h - 19h</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="edit-link">
+                        <a href="{% url 'cai_dat' %}"><i class="fas fa-sliders-h"></i> Điều chỉnh cài đặt</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Đơn hàng chờ giao -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-hourglass-half"></i> Đơn hàng chờ giao  <span style="background: var(--warning-color); color: white; padding: 2px 10px; border-radius: 20px; font-size: 11px; margin-left: 8px;">{{ pending_count|default:0 }}</span></h3>
+                    <a href="{% url 'danh_sach_don_hang' %}" style="font-size: 13px; color: var(--accent-color); text-decoration: none;">Xem tất cả <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="orders-table">
+                    {% for order in pending_orders|slice:":8" %}
+                    <div class="order-row">
+                        <div>
+                            <span class="order-code">#{{ order.ma_don|default:"DH---" }}</span>
+                            <span class="order-location"> | {{ order.ten_khach|truncatechars:20 }}</span>
+                        </div>
+                        <div>
+                            <span class="badge badge-pending">Chờ giao</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-check-circle" style="font-size: 40px; color: var(--success-color);"></i>
+                        <p>Không có đơn hàng nào chờ giao! 🎉</p>
+                    </div>
+                    {% endfor %}
+                    {% if pending_orders|length > 8 %}
+                    <div class="more-orders">
+                        và {{ pending_orders|length|add:"-8" }} đơn khác...
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <script>
+        var map = L.map('map').setView([10.802, 106.713], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var routeData = {{ route_json|safe|default:"null" }};
+
+        if (routeData && routeData.length > 0) {
+            var waypoints = routeData.map(function(p) {
+                return L.latLng(p.lat, p.lng);
+            });
+
+            L.Routing.control({
+                waypoints: waypoints,
+                routeWhileDragging: false,
+                addWaypoints: false,
+                show: false,
+                lineOptions: {
+                    styles: [{color: '#3b82f6', opacity: 0.8, weight: 6}]
+                },
+                createMarker: function(i, wp) {
+                    var iconUrl = (i === 0) ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png' : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png';
+                    return L.marker(wp.latLng, {
+                        icon: L.icon({ iconUrl: iconUrl, iconSize: [25, 41], iconAnchor: [12, 41] })
+                    }).bindPopup(routeData[i].ten);
+                }
+            }).addTo(map);
+
+            var group = new L.featureGroup(waypoints.map(w => L.marker(w)));
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function toggleRoute() {
+            var content = document.getElementById('routeContent');
+            var icon = document.getElementById('toggleIcon');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.classList.remove('rotated');
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                setTimeout(function() {
+                    content.classList.add('collapsed');
+                    icon.classList.add('rotated');
+                }, 10);
+            }
+        }
+
+        var routeContent = document.getElementById('routeContent');
+        if (routeContent) {
+            routeContent.style.maxHeight = routeContent.scrollHeight + 'px';
+        }
+    </script>
+</body>
+</html>

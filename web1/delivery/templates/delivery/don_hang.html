@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách đơn hàng - UTH Delivery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+        .sidebar-logo { padding: 24px 20px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; }
+        .sidebar-logo h2 { font-size: 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .sidebar-logo h2 i { color: #3b82f6; font-size: 24px; }
+        .sidebar-logo p { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+        .sidebar-menu { list-style: none; padding: 0 16px; }
+        .sidebar-menu li {
+            padding: 12px 16px; margin-bottom: 4px; border-radius: 12px;
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            transition: all 0.2s; color: #64748b; font-size: 14px; font-weight: 500;
+        }
+        .sidebar-menu li i { width: 22px; font-size: 16px; }
+        .sidebar-menu li:hover { background: #f1f5f9; color: #1e293b; }
+        .sidebar-menu li.active { background: #eef2ff; color: #3b82f6; }
+
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 24px 32px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title h1 { font-size: 24px; font-weight: 700; color: #1e293b; }
+        .page-title p { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .user-name { text-align: right; }
+        .user-name .name { font-size: 14px; font-weight: 600; }
+        .user-name .role { font-size: 11px; color: #10b981; }
+        .btn-logout {
+            background: none; border: none; color: #ef4444; font-size: 13px;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+            padding: 8px 12px; border-radius: 10px;
+        }
+        .btn-logout:hover { background: #fef2f2; }
+        .avatar {
+            width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: white; font-size: 18px;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            background: white; border-radius: 16px; padding: 16px 20px;
+            margin-bottom: 24px; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .search-input { display: flex; gap: 10px; flex: 1; max-width: 400px; }
+        .search-input input {
+            flex: 1; padding: 10px 16px; border: 1px solid #e2e8f0;
+            border-radius: 12px; font-size: 14px;
+        }
+        .search-input input:focus { outline: none; border-color: #3b82f6; }
+        .search-input button { background: #3b82f6; border: none; padding: 10px 20px; border-radius: 12px; color: white; cursor: pointer; }
+        .filter-select { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: white; }
+        .btn-add { background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 10px 24px; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-excel { background: #10b981; border: none; padding: 10px 20px; border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        /* Table */
+        .table-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { text-align: left; padding: 14px 12px; background: #f8fafc; font-size: 12px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .address-cell { max-width: 350px; white-space: normal; word-wrap: break-word; line-height: 1.5; }
+        .address-cell i { color: #ef4444; margin-right: 6px; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-delivering { background: #dbeafe; color: #1e40af; }
+        .status-delivered { background: #d1fae5; color: #065f46; }
+        .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-view { background: #8b5cf6; border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 11px; }
+        .btn-edit { background: #3b82f6; border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 11px; }
+        .btn-delete { background: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 11px; }
+        .btn-view:hover, .btn-edit:hover, .btn-delete:hover { opacity: 0.85; }
+        .empty-row td { text-align: center; padding: 50px; color: #94a3b8; }
+
+        /* Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; border-radius: 24px; padding: 32px;
+            max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;
+        }
+        .modal-header h3 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .close-modal { background: none; border: none; font-size: 28px; cursor: pointer; color: #94a3b8; }
+        .close-modal:hover { color: #ef4444; }
+
+        /* Detail View */
+        .detail-row { display: flex; margin-bottom: 16px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+        .detail-label { width: 130px; font-weight: 600; color: #64748b; font-size: 13px; }
+        .detail-value { flex: 1; font-size: 14px; color: #1e293b; line-height: 1.5; }
+        .detail-value i { margin-right: 6px; color: #3b82f6; }
+        .status-badge-large { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+        /* Edit Form */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #1e293b; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #3b82f6;
+        }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .btn-save { background: #10b981; border: none; padding: 12px 24px; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; flex: 1; }
+        .btn-cancel { background: #f1f5f9; border: none; padding: 12px 24px; border-radius: 12px; color: #64748b; font-weight: 500; cursor: pointer; flex: 1; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; }
+            .sidebar-logo h2 span, .sidebar-logo p, .sidebar-menu li span { display: none; }
+            .sidebar-menu li { justify-content: center; }
+            .main-content { margin-left: 80px; }
+            .detail-label { width: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><i class="fas fa-truck-fast"></i> <span>UTH Delivery</span></h2>
+            <p>Hệ thống tối ưu giao hàng</p>
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="location.href='{% url 'index' %}'"><i class="fas fa-chart-line"></i> <span>Dashboard</span></li>
+            <li onclick="location.href='{% url 'tao_don_moi' %}'"><i class="fas fa-plus-circle"></i> <span>Tạo đơn hàng</span></li>
+            <li class="active" onclick="location.href='{% url 'danh_sach_don_hang' %}'"><i class="fas fa-file-alt"></i> <span>Thông tin đơn hàng</span></li>
+            <li onclick="location.href='{% url 'cai_dat' %}'"><i class="fas fa-cog"></i> <span>Cài đặt hệ thống</span></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title">
+                <h1><i class="fas fa-list"></i> Danh sách đơn hàng</h1>
+                <p>Quản lý tất cả đơn hàng trong hệ thống</p>
+            </div>
+            <div class="user-info">
+                <div class="user-name">
+                    <div class="name">{{ user.username }}</div>
+                    <div class="role"><i class="fas fa-circle" style="font-size: 8px;"></i> Quản trị viên</div>
+                </div>
+                <form action="{% url 'logout' %}" method="post" style="margin:0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Thoát</button>
+                </form>
+                <div class="avatar"><i class="fas fa-user"></i></div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <div class="search-input">
+                <form method="get" style="display: flex; gap: 10px; width: 100%;">
+                    <input type="text" name="q" placeholder="🔍 Tìm theo mã đơn, tên khách, SĐT..." value="{{ query }}">
+                    <button type="submit"><i class="fas fa-search"></i> Tìm</button>
+                </form>
+            </div>
+            <select class="filter-select" onchange="location.href='?trang_thai='+this.value">
+                <option value="TAT_CA" {% if trang_thai_filter == 'TAT_CA' or not trang_thai_filter %}selected{% endif %}>📋 Tất cả trạng thái</option>
+                <option value="CHUA_GIAO" {% if trang_thai_filter == 'CHUA_GIAO' %}selected{% endif %}>🟡 Chưa giao</option>
+                <option value="DANG_GIAO" {% if trang_thai_filter == 'DANG_GIAO' %}selected{% endif %}>🔵 Đang giao</option>
+                <option value="DA_GIAO" {% if trang_thai_filter == 'DA_GIAO' %}selected{% endif %}>🟢 Đã giao</option>
+            </select>
+            <button class="btn-add" onclick="location.href='{% url 'tao_don_moi' %}'"><i class="fas fa-plus"></i> Thêm đơn hàng</button>
+            <button class="btn-excel" onclick="location.href='{% url 'xuat_excel' %}'"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-card">
+            <table id="orderTable">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Số điện thoại</th>
+                        <th>Địa chỉ giao hàng</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr id="row-{{ order.id }}" 
+                        data-ma-don="{{ order.ma_don }}"
+                        data-ten-khach="{{ order.ten_khach }}"
+                        data-so-dien-thoai="{{ order.so_dien_thoai }}"
+                        data-dia-chi="{{ order.dia_chi }}"
+                        data-lat="{{ order.lat }}"
+                        data-lng="{{ order.lng }}"
+                        data-trang-thai="{{ order.trang_thai }}"
+                        data-ngay-tao="{{ order.ngay_tao|date:'d/m/Y H:i' }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>#{{ order.ma_don }}</strong></td>
+                        <td>{{ order.ten_khach }}</td>
+                        <td>{{ order.so_dien_thoai|default:"---" }}</td>
+                        <td class="address-cell">
+                            <i class="fas fa-location-dot"></i> {{ order.dia_chi|default:"---" }}
+                        </td>
+                        <td>
+                            {% if order.trang_thai == 'CHUA_GIAO' %}
+                                <span class="status-badge status-pending"><i class="fas fa-clock"></i> Chờ giao</span>
+                            {% elif order.trang_thai == 'DANG_GIAO' %}
+                                <span class="status-badge status-delivering"><i class="fas fa-truck"></i> Đang giao</span>
+                            {% else %}
+                                <span class="status-badge status-delivered"><i class="fas fa-check-circle"></i> Đã giao</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ order.ngay_tao|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-view" onclick="viewOrder({{ order.id }})">
+                                    <i class="fas fa-eye"></i> Xem
+                                </button>
+                                <button class="btn-edit" onclick="openEditModal({{ order.id }})">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </button>
+                                <form method="post" action="{% url 'xoa_don' order.id %}" style="display:inline" onsubmit="return confirm('❌ Xóa đơn hàng {{ order.ma_don }}?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete"><i class="fas fa-trash"></i> Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="empty-row">
+                        <td colspan="8">
+                            <i class="fas fa-box-open" style="font-size: 48px; color: #cbd5e1;"></i>
+                            <p style="margin-top: 10px;">Không có đơn hàng nào!</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal XEM CHI TIẾT -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle" style="color: #3b82f6;"></i> Chi tiết đơn hàng</h3>
+                <button class="close-modal" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div id="viewContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal SỬA -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit" style="color: #3b82f6;"></i> Sửa đơn hàng</h3>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" id="edit_order_id">
+                <div class="form-group">
+                    <label>Tên khách hàng <span style="color: red;">*</span></label>
+                    <input type="text" name="ten_khach" id="edit_ten_khach" required>
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" name="so_dien_thoai" id="edit_so_dien_thoai">
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ</label>
+                    <textarea name="dia_chi" id="edit_dia_chi" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Vĩ độ (Latitude)</label>
+                    <input type="number" step="any" name="lat" id="edit_lat" required>
+                </div>
+                <div class="form-group">
+                    <label>Kinh độ (Longitude)</label>
+                    <input type="number" step="any" name="lng" id="edit_lng" required>
+                </div>
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    <select name="trang_thai" id="edit_trang_thai">
+                        <option value="CHUA_GIAO">🟡 Chưa giao</option>
+                        <option value="DANG_GIAO">🔵 Đang giao</option>
+                        <option value="DA_GIAO">🟢 Đã giao</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> Lưu</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Hàm XEM chi tiết đơn hàng - Lấy dữ liệu trực tiếp từ data attribute của row
+        function viewOrder(orderId) {
+            const row = document.getElementById(`row-${orderId}`);
+            if (!row) {
+                alert('Không tìm thấy thông tin đơn hàng!');
+                return;
+            }
+            
+            // Lấy dữ liệu từ data attribute
+            const maDon = row.getAttribute('data-ma-don') || '';
+            const tenKhach = row.getAttribute('data-ten-khach') || '';
+            const soDienThoai = row.getAttribute('data-so-dien-thoai') || 'Không có';
+            const diaChi = row.getAttribute('data-dia-chi') || 'Không có';
+            const lat = row.getAttribute('data-lat') || '0';
+            const lng = row.getAttribute('data-lng') || '0';
+            const trangThai = row.getAttribute('data-trang-thai') || 'CHUA_GIAO';
+            const ngayTao = row.getAttribute('data-ngay-tao') || '';
+            
+            // Định dạng trạng thái hiển thị
+            let statusHtml = '';
+            if (trangThai === 'CHUA_GIAO') {
+                statusHtml = '<span class="status-badge-large status-pending"><i class="fas fa-clock"></i> Chờ giao</span>';
+            } else if (trangThai === 'DANG_GIAO') {
+                statusHtml = '<span class="status-badge-large status-delivering"><i class="fas fa-truck"></i> Đang giao</span>';
+            } else {
+                statusHtml = '<span class="status-badge-large status-delivered"><i class="fas fa-check-circle"></i> Đã giao</span>';
+            }
+            
+            const viewContent = document.getElementById('viewContent');
+            viewContent.innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-hashtag"></i> Mã đơn:</div>
+                    <div class="detail-value"><strong>#${escapeHtml(maDon)}</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-user"></i> Khách hàng:</div>
+                    <div class="detail-value">${escapeHtml(tenKhach)}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-phone"></i> Số điện thoại:</div>
+                    <div class="detail-value">${escapeHtml(soDienThoai)}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-location-dot"></i> Địa chỉ:</div>
+                    <div class="detail-value">${escapeHtml(diaChi)}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-map-marker-alt"></i> Tọa độ:</div>
+                    <div class="detail-value"><code>${lat}, ${lng}</code></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-tag"></i> Trạng thái:</div>
+                    <div class="detail-value">${statusHtml}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-calendar"></i> Ngày tạo:</div>
+                    <div class="detail-value">${escapeHtml(ngayTao)}</div>
+                </div>
+            `;
+            
+            document.getElementById('viewModal').style.display = 'flex';
+        }
+        
+        // Hàm mở modal SỬA - Điền dữ liệu từ data attribute vào form
+        function openEditModal(orderId) {
+            const row = document.getElementById(`row-${orderId}`);
+            if (!row) {
+                alert('Không tìm thấy thông tin đơn hàng!');
+                return;
+            }
+            
+            // Lấy dữ liệu từ data attribute
+            const maDon = row.getAttribute('data-ma-don') || '';
+            const tenKhach = row.getAttribute('data-ten-khach') || '';
+            const soDienThoai = row.getAttribute('data-so-dien-thoai') || '';
+            const diaChi = row.getAttribute('data-dia-chi') || '';
+            const lat = row.getAttribute('data-lat') || '0';
+            const lng = row.getAttribute('data-lng') || '0';
+            const trangThai = row.getAttribute('data-trang-thai') || 'CHUA_GIAO';
+            
+            // Điền dữ liệu vào form
+            document.getElementById('edit_order_id').value = orderId;
+            document.getElementById('edit_ten_khach').value = tenKhach;
+            document.getElementById('edit_so_dien_thoai').value = soDienThoai;
+            document.getElementById('edit_dia_chi').value = diaChi;
+            document.getElementById('edit_lat').value = lat;
+            document.getElementById('edit_lng').value = lng;
+            document.getElementById('edit_trang_thai').value = trangThai;
+            
+            // Cập nhật action cho form
+            document.getElementById('editForm').action = `/sua-don/${orderId}/`;
+            
+            // Hiển thị modal
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        // Đóng modal Xem
+        function closeViewModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+        
+        // Đóng modal Sửa
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        // Escape HTML để tránh lỗi
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Đóng modal khi click ra ngoài
+        window.onclick = function(event) {
+            const viewModal = document.getElementById('viewModal');
+            const editModal = document.getElementById('editModal');
+            if (event.target === viewModal) closeViewModal();
+            if (event.target === editModal) closeEditModal();
+        }
+    </script>
+</body>
+</html>

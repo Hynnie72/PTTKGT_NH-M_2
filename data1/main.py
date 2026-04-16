@@ -2,7 +2,7 @@ import time
 
 from utils import read_data
 from tsp_dp import tsp_dp
-from code_tim_duong import solve_tsp
+from data1.dp_truyvet import solve_tsp
 from code_xu_ly import create_distance_from_points
 
 
